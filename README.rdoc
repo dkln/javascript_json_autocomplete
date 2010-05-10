@@ -1,6 +1,8 @@
 = Javascript JSON Autocomplete
 
-Simple but effective Javascript JSON Autocomplete class. Can help you with autocompletion for <input> fields or for <select> fields. Support multiple selections for <select> fields.
+Simple but effective and fully stylable Javascript JSON Autocomplete class. Can help you with autocompletion for <input> fields or for <select>
+fields. Support multiple selections for <select> fields. If multiple items are found, the class will automaticly build a
+dropdown for you in correct semantic HTML.
 
 == Basic usage
 
@@ -9,22 +11,31 @@ Note that you'll need at least jQuery 1.3.2. jQuery needs to be included before 
 Just include in your HTML (or better: HAML):
   <script type="text/javascript" src="autocomplete.js">
 
-And add the class to the elements of your choice when the document is loaded:
+And add the autocomplete class to the elements of your choice when the document is loaded:
   $('.autocomplete').each(function() {
       if(!this.autocomplete)
           this.autocomplete = new Autocomplete(this);
   });
 
-The first argument of the constructor of the Autocomplete class is the jQuery object where you want the autocompletion to be applied on.
+The first argument of the constructor of the Autocomplete class is the jQuery object where you want the autocompletion 
+to be applied on.
 
-== A basic example
+== A basic example with an input field
 
-All autocomplete fields take a +autocomplete_url+ attribute. This attribute needs to contain the URL of the server. The +%+ sign in the URL will be replaced with the text where the user requested for.
+All autocomplete fields take a +autocomplete_url+ attribute. This attribute needs to contain the URL of the server.
+The % sign in the URL will be replaced with the text of the <input> fieldr.
 
+=== HTML
 Your HTML:
   <input type="text" name="company" class="autocomplete" autocomplete_url="/companies.json?filter=%" />
 
+Note: if the user presses a key, the class will wait for 300ms before it will do a server request.
+
+=== Server
 Your (Ruby) serverside code could look like this (the controller):
+
+  companies.rb:
+
   class CompaniesController < ApplicationController
     def index
       if params[:filter]
@@ -35,10 +46,14 @@ Your (Ruby) serverside code could look like this (the controller):
     end
   end
 
-Your view:
-  = @companies.collect { |c| { :name => c.name :id => c.id }}.to_json
+Your view for the JSON response:
+  index.json.haml:
 
-The class expects that the server returns a JSON structure that contains an array with the possible items. Each item must consist of a hash with +name+ and an +id+ field. 
+  = @companies.collect { |c| { :name => c.name, :id => c.id }}.to_json
+
+=== JSON response
+The class expects that the server returns a JSON structure that contains an array with the possible items.
+Each item must consist of a hash with +name+ and an +id+ field.
 
 So your JSON respone could somehow look like this:
   [ { 'name': 'First item',
@@ -46,3 +61,100 @@ So your JSON respone could somehow look like this:
 
     { 'name': 'Second item',
       'id': 1338 }  ]
+
+== Example with a single selection select field
+
+Select fields need an extra +item_url+ attribute. This attribute contains the URL to the server where the seperate
+items can be requested by a given +id+. The class will use this URL when some items are already selected. I will
+try to clarify this with a simple example.
+
+=== HTML
+  <select name="contacts" class="autocomplete" autocomplete_url="/contacts.json?filter=%" item_url="/contacts/show.json?id=%">
+    <option value="1337">Foo Bar</option>
+    <option value="1338">Just another guy</option>
+    <option value="1339" selected="selected">John Appleseed</option>
+  </select>
+
+Note that after applying the class to the above <select> field, the field will be removed from the DOM with an <input> field.
+
+=== Server
+Your serverside code could look like this:
+
+  contacts.rb
+
+  Class ContactsController < ApplicationController
+    def index
+      if params[:filter]
+        @contacts = Contact.find(:all, :conditions => ['name LIKE ?', "%#{params[:filter]}%"])
+      else
+        @contacts = Contact.all
+      end
+    end
+
+    def show
+      @contact = Contact.find(params[:id])
+    end
+
+Your view for the JSON response. For the +autocomplete_url+ request:
+  index.json.haml
+
+  = @contacts.collect { |c| { :name => c.name, :id => c.id }}.to_json
+
+And for the +item_url+ request:
+  show.json.haml
+
+  = { :name => @contact.name, :id => @contact.id }.to_json
+
+
+== Example with a multiselect select field
+
+Using the class on multiselect <select> fields is almost the same as for single selection <select> fields, with an exception
+for the +multiple+ attribute.
+
+=== HTML
+  <select name="contacts" class="autocomplete" autocomplete_url="/contacts.json?filter=%" item_url="/contacts/show.json?id=%" multiple="multiple">
+    <option value="1337">Foo Bar</option>
+    <option value="1338">Just another guy</option>
+    <option value="1339" selected="selected">John Appleseed</option>
+    <option value="1447" selected="selected">Deuce Biggelow</option>
+  </select>
+
+Note: because multiple items can be selected and the <select> field is replaced with an <input> field, the class will also automaticly
+build an container that contains a <ul> element with all the selected items.
+
+== Submitting forms
+No worries. You can still use the normal <input type="submit" /> just like before. The submitted data will be the same as you would expect
+from an <input> or <select> element. The class will automaticly create the appropiate hidden fields with the correct names for you... how nice!
+
+== Styling
+=== The dropdown
+The class will add the following HTML to the DOM after the <select> or <input> element when multiple items are found in the JSON response:
+  <div class="autocomplete_dropdown">
+    <ul>
+      <li rel="1337">Foo Bar</li>
+      <li rel="1339">John Appleseed</li>
+    </ul>
+  </div>
+
+=== Selected items
+The class will build the following HTML when applying the autocomplete class to a multiselect <select>:
+  <div class="autocomplete_value_list" id="idofselect_value_list_container">
+    <ul id="idofselect_value_list">
+      <li>Just another guy</li>
+      <li>Deuce Biggelow</li>
+    </ul>
+  </div>
+
+Note that +idofselect+ is the ID of the element where you applied the autocomplete class on.
+
+== Notes on user interaction
+Unique features:
+* If a user presses the ESC key, the autocomplete dropdown will automaticly close.
+* If a user presses the ENTER key, the class will filter the typed in text immediatly instead of waiting for 300ms.
+* If the the JSON response only contains 1 element, the class will automaticly place the text in the 'name' hash in the input field.
+* If a user clicks on one of the selected items (when using multiselect <select> fields), the item will be removed from the list.
+
+= License and credits
+Use it and have fun with it! Comments and cakes are welcome!
+
+Copyright 2009-2010, Diederick Lawson. Released under the BSD license.
