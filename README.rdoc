@@ -1,0 +1,48 @@
+= Javascript JSON Autocomplete
+
+Simple but effective Javascript JSON Autocomplete class. Can help you with autocompletion for <input> fields or for <select> fields. Support multiple selections for <select> fields.
+
+== Basic usage
+
+Note that you'll need at least jQuery 1.3.2. jQuery needs to be included before you include the Javascript JSON Autocomplete class.
+
+Just include in your HTML (or better: HAML):
+  <script type="text/javascript" src="autocomplete.js">
+
+And add the class to the elements of your choice when the document is loaded:
+  $('.autocomplete').each(function() {
+      if(!this.autocomplete)
+          this.autocomplete = new Autocomplete(this);
+  });
+
+The first argument of the constructor of the Autocomplete class is the jQuery object where you want the autocompletion to be applied on.
+
+== A basic example
+
+All autocomplete fields take a +autocomplete_url+ attribute. This attribute needs to contain the URL of the server. The +%+ sign in the URL will be replaced with the text where the user requested for.
+
+Your HTML:
+  <input type="text" name="company" class="autocomplete" autocomplete_url="/companies.json?filter=%" />
+
+Your (Ruby) serverside code could look like this (the controller):
+  class CompaniesController < ApplicationController
+    def index
+      if params[:filter]
+        @companies = Company.find(:all, :conditions => ['name LIKE ?', "%#{params[:filter]}%"])
+      else
+        @companies = Company.all
+      end
+    end
+  end
+
+Your view:
+  = @companies.collect { |c| { :name => c.name :id => c.id }}.to_json
+
+The class expects that the server returns a JSON structure that contains an array with the possible items. Each item must consist of a hash with +name+ and an +id+ field. 
+
+So your JSON respone could somehow look like this:
+  [ { 'name': 'First item',
+      'id': 1337 },
+
+    { 'name': 'Second item',
+      'id': 1338 }  ]
