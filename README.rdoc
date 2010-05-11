@@ -56,11 +56,11 @@ The class expects that the server returns a JSON structure that contains an arra
 Each item must consist of a hash with +name+ and an +id+ field.
 
 So your JSON respone could somehow look like this:
-  [ { 'name': 'First item',
-      'id': 1337 },
+  [ { "name": "First item",
+      "id": 1337 },
 
-    { 'name': 'Second item',
-      'id': 1338 }  ]
+    { "name": "Second item",
+      "id": 1338 }  ]
 
 == Example with a single selection select field
 
@@ -104,6 +104,9 @@ And for the +item_url+ request:
   show.json.haml
 
   = { :name => @contact.name, :id => @contact.id }.to_json
+
+== JSON response
+  { "name": => "John Appleseed", "id": => 10 }
 
 
 == Example with a multiselect select field
