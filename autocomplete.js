@@ -27,6 +27,14 @@ Autocomplete.prototype = {
 
       // add a list with multi vals
       if(this.multiselect) {
+        // create empty array
+        hidden = $('<input type="hidden" />');
+        hidden.attr('id', this.root.attr('id') + '_val_empty');
+        hidden.attr('name', this.root.attr('name'));
+        hidden.val('');
+
+        this.input.after(hidden);
+
         // add a div
         this.multiselectListContainer = this.createMultiselectListContainer();
         // and a ul
@@ -423,3 +431,7 @@ function applyAutocomplete() {
     }
   });
 }
+
+$(function() {
+  applyAutocomplete();
+});
