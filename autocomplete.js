@@ -25,21 +25,27 @@ Autocomplete.prototype = {
       // multiselect?
       this.multiselect = this.root.attr('multiple');
 
-      // add a list with multi vals
-      if(this.multiselect) {
-        // create empty array
-        hidden = $('<input type="hidden" />');
-        hidden.attr('id', this.root.attr('id') + '_val_empty');
-        hidden.attr('name', this.root.attr('name'));
-        hidden.val('');
+      // show details?
+      this.showDetails = this.root.attr('data-show-details');
 
-        this.input.after(hidden);
+      // add a list with multi vals
+      if(this.multiselect || this.showDetails) {
+
+        if(this.multiselect) {
+          // create empty array
+          hidden = $('<input type="hidden" />');
+          hidden.attr('id', this.root.attr('id') + '_val_empty');
+          hidden.attr('name', this.root.attr('name'));
+          hidden.val('');
+
+          this.input.after(hidden);
+        }
 
         // add a div
         this.multiselectListContainer = this.createMultiselectListContainer();
         // and a ul
         this.multiselectList = this.createMultiselectList();
-        this.itemUrl = this.root.attr('item_url');
+        this.itemUrl = this.root.attr('data-item-url');
       }
 
       // set default texts
@@ -54,7 +60,7 @@ Autocomplete.prototype = {
       this.hiddenField.val(this.selectedValue);
     }
 
-    this.autocompleteUrl = this.root.attr('autocomplete_url');
+    this.autocompleteUrl = this.root.attr('data-autocomplete-url');
 
     this.input[0].autocomplete = this;
 
@@ -64,9 +70,9 @@ Autocomplete.prototype = {
     this.input.blur(this.bind(this.handleBlur));
 
     // finally, check the multivalues and autofill them
-    if(this.multiselect) {
+    if(this.multiselect || this.showDetails) {
       this.updateMultiVals();
-      this.updateMultiValHiddenField();
+      if(this.multiselect) this.updateMultiValHiddenField();
     }
   },
 
@@ -99,13 +105,22 @@ Autocomplete.prototype = {
     var vals = this.selectedValue;
 
     if(!vals) vals = [];
+    if(typeof(vals) == 'string' || typeof(vals) == 'number') vals = [vals];
+
+    if(!this.multiselect && this.showDetails && vals[0] && this.multiselectList.find('li[rel]').length > 0) {
+      var firstItem = $(this.multiselectList.find('li')[0]);
+
+      if(firstItem.attr('rel') != vals[0]) {
+        firstItem.remove();
+      }
+    }
 
     // loop every selected val
     for(i = 0; i < vals.length; i++) {
       // do already have a list item with this ID?
       if(this.multiselectList.find('li[rel="' + vals[i] + '"]').length == 0) {
         // no, so go request it!
-        $.getJSON(this.itemUrl.replace('%', vals[i]).replace('%25', vals[i]), this.bind(this.handleUpdateMultiValsResponse));
+        jQuery.getJSON(this.itemUrl.replace('%', vals[i]).replace('%25', vals[i]), this.bind(this.handleUpdateMultiValsResponse));
       }
     }
   },
@@ -136,7 +151,9 @@ Autocomplete.prototype = {
       }
 
       item.attr('rel', data.id);
-      item.click(this.bind(this.handleMultiValItemClick));
+
+      if(this.multiselect)
+        item.click(this.bind(this.handleMultiValItemClick));
 
       // add to list
       this.multiselectList.append(item);
@@ -271,7 +288,7 @@ Autocomplete.prototype = {
   // filters autocompletion
   filter: function() {
     this.input.parent().addClass('loading');
-    $.getJSON(this.autocompleteUrl.replace('%25', this.input.val()).replace('%', this.input.val()), this.bind(this.handleFilterResponse));
+    jQuery.getJSON(this.autocompleteUrl.replace('%25', this.input.val()).replace('%', this.input.val()), this.bind(this.handleFilterResponse));
   },
 
   // catches response of ajax filter
@@ -310,7 +327,7 @@ Autocomplete.prototype = {
       }
 
       // only one possibility?
-      if(data.length == 1 && data[0].name != this.input.val() && this.root.attr('autoselect')) {
+      if(data.length == 1 && this.root.attr('data-autoselect')) {
         this.dropdown.hide();
         window.clearTimeout(this.timer);
         this.timer = window.setTimeout(this.bind(this.handleOnlyOneRowTimer), 300, this);
@@ -359,14 +376,14 @@ Autocomplete.prototype = {
     this.input.focus();
 
     // auto submit?
-    if(this.root.attr('autosubmit') == 'autosubmit') {
+    if(this.root.attr('data-autosubmit') == 'data-autosubmit') {
       // submits automaticly the form where the element is placed in
       addNoValidationFlag(this.root, this.input.parents('form'));
       this.input.parents('form').submit();
     }
 
-    // ok, now some magic!
-    if(this.multiselect)
+    // retrieve & show all current selected items
+    if(this.multiselect || this.showDetails)
       this.updateMultiVals();
   },
 
@@ -420,6 +437,13 @@ Autocomplete.prototype = {
     // insert after root
     this.root.after(input);
 
+    // check if there is a labe
+    var label = $("label[for='" + this.root.attr('id') + "']")
+
+    if(label.length > 0) {
+      label.attr('for', this.root.attr('id') + '_input');
+    }
+
     return input;
   }
 }
@@ -435,3 +459,4 @@ function applyAutocomplete() {
 $(function() {
   applyAutocomplete();
 });
+
