@@ -74,6 +74,21 @@ Autocomplete.prototype = {
       this.updateMultiVals();
       if(this.multiselect) this.updateMultiValHiddenField();
     }
+
+    this.input.autocomplete = this;
+  },
+
+  addSelectedValue: function(id) {
+    if(this.multiselect) {
+      if(!this.selectedValue)
+        this.selectedValue = [];
+
+      this.selectedValue.push(id);
+    } else {
+      this.selectedValue = id;
+    }
+
+    this.updateMultiVals();
   },
 
   // creates a multiselect list container
