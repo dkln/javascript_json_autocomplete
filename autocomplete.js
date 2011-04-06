@@ -120,7 +120,7 @@ Autocomplete.prototype = {
       // do already have a list item with this ID?
       if(this.multiselectList.find('li[rel="' + vals[i] + '"]').length == 0) {
         // no, so go request it!
-        jQuery.getJSON(this.itemUrl.replace('%', vals[i]).replace('%25', vals[i]), this.bind(this.handleUpdateMultiValsResponse));
+        $.getJSON(this.itemUrl.replace('%', vals[i]).replace('%25', vals[i]), this.bind(this.handleUpdateMultiValsResponse));
       }
     }
   },
@@ -288,7 +288,7 @@ Autocomplete.prototype = {
   // filters autocompletion
   filter: function() {
     this.input.parent().addClass('loading');
-    jQuery.getJSON(this.autocompleteUrl.replace('%25', this.input.val()).replace('%', this.input.val()), this.bind(this.handleFilterResponse));
+    $.getJSON(this.autocompleteUrl.replace('%25', this.input.val()).replace('%', this.input.val()), this.bind(this.handleFilterResponse));
   },
 
   // catches response of ajax filter
