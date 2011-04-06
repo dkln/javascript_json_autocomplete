@@ -80,15 +80,21 @@ Autocomplete.prototype = {
 
   addSelectedValue: function(id) {
     if(this.multiselect) {
-      if(!this.selectedValue)
-        this.selectedValue = [];
+      var vals = this.selectedValue;
+      if(!vals) vals = [];
 
-      this.selectedValue.push(id);
-    } else {
-      this.selectedValue = id;
+      vals.push(id);
+
+      this.selectedValue = vals;
+      this.updateMultiValHiddenField();
+      this.input.val('');
     }
 
-    this.updateMultiVals();
+    this.root.val(this.selectedValue);
+
+    // retrieve & show all current selected items
+    if(this.multiselect || this.showDetails)
+      this.updateMultiVals();
   },
 
   // creates a multiselect list container
